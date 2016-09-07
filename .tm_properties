@@ -1,0 +1,8 @@
+# Settings
+projectDirectory     = "$CWD"
+windowTitle          = "$TM_DISPLAYNAME — CodeFights"
+TM_CMAKE_BINARY_DIR="$CWD/build"
+[ .git/COMMIT_EDITMSG ]
+softWrap         = true
+spellChecking    = true
+spellingLanguage = 'en'

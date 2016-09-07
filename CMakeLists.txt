@@ -28,6 +28,7 @@ endif()
 find_package(GTest)
 
 set(CXX-Challanges 
+  conwaysVariationsOfLife
   uShouldDate
   glasses
   square-diff
