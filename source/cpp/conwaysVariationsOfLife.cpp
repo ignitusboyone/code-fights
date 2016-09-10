@@ -148,7 +148,7 @@ int ConwaysVariationsOfLife( std::string def,
 
 #include <gtest/gtest.h>
 //-----------------------------------------------------------------------------
-TEST (ThreeGlasses, Test_1) {
+TEST (Conways, Test_1) {
     EXPECT_EQ ( 12, ConwaysVariationsOfLife ( "B3/S23",
                                   {"       ", 
                                    "       ", 
@@ -160,7 +160,7 @@ TEST (ThreeGlasses, Test_1) {
                                    ,4));
 };
 //-------------------------------------------------------------------------------
-TEST (ThreeGlasses, Test_2) {
+TEST (Conways, Test_2) {
     EXPECT_EQ ( 3, ConwaysVariationsOfLife ( "B3/S23",
                                {"     ",
                                 "     ",
@@ -170,7 +170,7 @@ TEST (ThreeGlasses, Test_2) {
                                 ,10));
 };
 //-------------------------------------------------------------------------------
-TEST (ThreeGlasses, Test_3) {
+TEST (Conways, Test_3) {
     EXPECT_EQ ( 8, ConwaysVariationsOfLife ( "B3/S23",
                               {"      ",
                                " ##   ", 
@@ -181,7 +181,7 @@ TEST (ThreeGlasses, Test_3) {
                                 ,3));
 };
 //-------------------------------------------------------------------------------
-TEST (ThreeGlasses, Test_4) {
+TEST (Conways, Test_4) {
     EXPECT_EQ ( 100, ConwaysVariationsOfLife ( "B0/S012345678",
                                {"          ", 
                                 "          ", 
@@ -196,7 +196,7 @@ TEST (ThreeGlasses, Test_4) {
                                 ,5));
 };
 //-------------------------------------------------------------------------------
-TEST (ThreeGlasses, Test_5) {
+TEST (Conways, Test_5) {
     EXPECT_EQ ( 0, ConwaysVariationsOfLife ( "B0/S01234567",
                                {"     ", 
                                 "     ", 
@@ -206,7 +206,7 @@ TEST (ThreeGlasses, Test_5) {
                                 ,10));
 };
 //-------------------------------------------------------------------------------
-TEST (ThreeGlasses, Test_6) {
+TEST (Conways, Test_6) {
     EXPECT_EQ ( 9, ConwaysVariationsOfLife ( "B1357/S02468",
                                {"     ", 
                                 "     ", 
@@ -216,7 +216,7 @@ TEST (ThreeGlasses, Test_6) {
                                 ,7));
 };
 //-------------------------------------------------------------------------------
-TEST (ThreeGlasses, Test_7) {
+TEST (Conways, Test_7) {
     EXPECT_EQ ( 10, ConwaysVariationsOfLife ( "B3/S23",
                                {"      #   ", 
                                 "       #  ", 
@@ -231,7 +231,7 @@ TEST (ThreeGlasses, Test_7) {
                                 ,10));
 };
 //-------------------------------------------------------------------------------
-TEST (ThreeGlasses, Test_8) {
+TEST (Conways, Test_8) {
     EXPECT_EQ ( 67, ConwaysVariationsOfLife ( "B34/S234",
                               {"      #   ", 
                                "       #  ", 
@@ -246,7 +246,7 @@ TEST (ThreeGlasses, Test_8) {
                                 ,10));
 };
 //-------------------------------------------------------------------------------
-TEST (ThreeGlasses, Test_9) {
+TEST (Conways, Test_9) {
     EXPECT_EQ ( 9, ConwaysVariationsOfLife ( 
       "B4/S03",
       {"          ", 
