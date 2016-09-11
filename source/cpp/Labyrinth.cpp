@@ -4,113 +4,30 @@
 #include <iostream>
 
 #include <cstdlib>
-#define _DEBUG 0
+#include <cstdint>
+#define _DEBUG 2
 
-enum Direction : int8_t {UP,DOWN,LEFT,RIGHT, NEUTRAL};
+// enum Direction : int8_t {UP,DOWN,LEFT,RIGHT, NEUTRAL};
+#define UP 'U'
+#define DOWN 'D'
+#define LEFT 'L'
+#define RIGHT 'R'
 //-----------------------------------------------------------------------------
-#ifdef _DEBUG
-std::ostream& operator<< (std::ostream& ostr, Direction obj)
+
+//-----------------------------------------------------------------------------
+struct Position 
 {
-  switch(obj){
-    case UP:    ostr<<'U';  break;
-    case DOWN:  ostr<<'D';  break;
-    case LEFT:  ostr<<'L';  break;
-    case RIGHT: ostr<<'R';  break;
-    default:          break;
+  int _X;
+  int _Y;
+  bool operator==(const Position& rhs){
+    return _X == rhs._X && _Y == rhs._Y;
   }
-  return ostr;
-}
-#endif
-//-----------------------------------------------------------------------------
-class Position 
-{
-public:
-  Position(size_t x=0, size_t y=0)
-    :_X(x)
-    ,_Y(y)
-  {}
-  inline void setX(size_t x){ _X = x;}
-  inline void setY(size_t y){ _Y = y;}
-  inline size_t getX() const { return _X;}
-  inline size_t getY() const { return _Y;}
-  //---------------------------------------------
-  bool operator==(const Position& rhs)
-    { return _X == rhs._X && _Y == rhs._Y;}
-  //---------------------------------------------
-  Position operator+(Position& rhs)
-    { 
-      Position rvalue(_X+rhs._X, _Y+rhs._Y);
-      return rvalue;
-    }
-  //---------------------------------------------
-  Position operator-(Position& rhs)
-    { 
-      Position rvalue(_X-rhs._X, _Y-rhs._Y);
-      return rvalue;
-    }
-  //---------------------------------------------
-  Position& operator+=(Position& rhs)
-    { 
-      _X+=rhs._X;
-      _Y+=rhs._Y;
-      return *this;
-    }
-  //---------------------------------------------
-  Position& operator-=(Position& rhs)
-    { 
-      _X-=rhs._X;
-      _Y-=rhs._Y;
-      return *this;
-    }
-  //---------------------------------------------
-  void move(const Direction& rhs)
-    { 
-      switch (rhs){
-        case UP:    _Y-=1;  break;
-        case DOWN:  _Y+=1;  break;
-        case LEFT:  _X-=1;  break;
-        case RIGHT: _X+=1;  break;
-        default:          break;
-      }
-    }
-  //---------------------------------------------
-  void unmove(const Direction& rhs)
-    { 
-      switch (rhs){
-        case UP:    _Y+=1;  break;
-        case DOWN:  _Y-=1;  break;
-        case LEFT:  _X+=1;  break;
-        case RIGHT: _X-=1;  break;
-        default:          break;
-      }
-    }
-private:
-  size_t _X;
-  size_t _Y;
 };
 //-----------------------------------------------------------------------------
-#ifdef _DEBUG
-std::ostream& operator<< (std::ostream& ostr, Position obj){
-  ostr << "(" << obj.getX() <<" , "<< obj.getY() <<")";
-  return ostr;
-}
-#endif
+
 //-----------------------------------------------------------------------------
-class Solution: public std::vector<Direction> 
-{
-public:
-  Solution(std::vector<Direction> cmds, Position start)
-    :std::vector<Direction>(cmds)
-    ,_qsp(start)
-  {}
-  
-    Position getQuickStart() const { 
-      return _qsp ; 
-    }
-    void     setQuickStart(const Position& pose) { _qsp = pose; }
-protected:
-  Position _qsp;
-};
+using Solution = std::string ;
+
 //-----------------------------------------------------------------------------
 class Laybrinth 
 {
@@ -131,7 +48,7 @@ public:
   {
     cycles = -1;
     bool done = false;
-    Position current = work_queue.getQuickStart();;
+    Position current = _start;
     std::vector<Position> history{_start};
 
     auto itr = work_queue.begin();
@@ -143,10 +60,19 @@ public:
             itr != work_queue.end(); 
             ++itr)
       {
-        current.move(*itr);
-        if(current == _finish){ 
+          
+          
+        switch (*itr){
+            case UP:    current._Y-=1;  break;
+            case DOWN:  current._Y+=1;  break;
+            case LEFT:  current._X-=1;  break;
+            case RIGHT: current._X+=1;  break;
+            default:          break;
+        }
+
+        if(current._X == _finish._X && current._Y == _finish._Y){ 
           return true;
-        } else if ( _labyrinth[current.getY()][current.getX()] != '.' ) { 
+        } else if ( _labyrinth[current._Y][current._X] != '.' ) { 
           done = true; break;
         } 
         else if ( work_queue.size()>3&&find (history.begin(), history.end(), current) != history.end()
@@ -154,25 +80,19 @@ public:
                     &&  itr != work_queue.end()-1
                 )
         {
-#if _DEBUG > 4
-          std::cout << work_queue.size() << "##";
-          for ( auto cmd : work_queue )
-            std::cout << cmd << ",";
-          std::cout << "\n";
-#endif
+
           cycles = 0; return false;
         }
         history.push_back(current);
-      }
+        }
       ++cycles;
-      history.clear();
+      history.resize(0);
       history.push_back(current);
-      if( current == _start){
+      if( current._X == _start._X && current._Y == _start._Y){
         break;
       }
       itr = work_queue.begin();
     }
-    work_queue.setQuickStart(current);
     return false;
   }
 private:
@@ -189,67 +109,63 @@ int labyrinthNavigation(std::vector<std::string> map,
                             std::string(map[1].size()+2,'#'));
   for (auto i=0; i<map.size(); ++i)
     padded_map[i+1].replace(1,map[i].size(),map[i]);
- 
-  Laybrinth laybrinth(padded_map,Position(start[1]+1,start[0]+1),Position(dest[1]+1,dest[0]+1)); 
+  Position adj_start = {start[1]+1,start[0]+1};
+  Position adj_dest  = {dest[1]+1,dest[0]+1};
+  Laybrinth laybrinth(padded_map,adj_start, adj_dest); 
 
-#if _DEBUG > 1
-  std::cout << "Start( "<< start[1]+1<< " , " << start[0]+1 <<" )\n";
-  std::cout << "Finish( "<< dest[1]+1<< " , " <<  dest[0]+1 <<" )\n";
+  #if _DEBUG > 1
+    std::cout << "Start( "<< start[1]+1<< " , " << start[0]+1 <<" )\n";
+    std::cout << "Finish( "<< dest[1]+1<< " , " <<  dest[0]+1 <<" )\n";
 
-  padded_map[(start[0]+1)][(start[1]+1)] = 'S';
-  padded_map[ (dest[0]+1)][ (dest[1]+1)] = 'F';
+    padded_map[(start[0]+1)][(start[1]+1)] = 'S';
+    padded_map[ (dest[0]+1)][ (dest[1]+1)] = 'F';
   
-  for(auto s:padded_map)
-    std::cout << s << "\n";
-  std::cout << "\n";
-#endif
+    for(auto s:padded_map)
+      std::cout << s << "\n";
+    std::cout << "\n";
+  #endif
     
   std::deque<Solution> work_queue;
-  work_queue.push_back(Solution({UP},   laybrinth.Start()));
-  work_queue.push_back(Solution({DOWN}, laybrinth.Start()));
-  work_queue.push_back(Solution({LEFT}, laybrinth.Start()));
-  work_queue.push_back(Solution({RIGHT},laybrinth.Start()));
+  work_queue.push_back({UP});
+  work_queue.push_back({DOWN});
+  work_queue.push_back({LEFT});
+  work_queue.push_back({RIGHT});
   
-  size_t max_queue_size = 0;
   while (work_queue.size()){
     auto cmd_queue = work_queue.front();
     size_t cycles = 0;
     if( laybrinth.simulate(cmd_queue,cycles )){
-#if _DEBUG
-      for ( auto cmd : cmd_queue )
-        std::cout << cmd << ",";
-      std::cout << "\n";
-#endif
+
        return cmd_queue.size();
     } else {
       if (cycles ){
-#if _DEBUG > 2
-        std::cout << work_queue.size() << ": ";
-        for ( auto cmd : cmd_queue )
-          std::cout << cmd << ",";
-        std::cout << "\n";
-#endif        
-        if(max_queue_size < work_queue.size())
+        if(cmd_queue.size()<4 || cmd_queue.back() != 'D')
         {
-          max_queue_size = work_queue.size();
+           cmd_queue+="U";
+           work_queue.push_back(cmd_queue);
+           cmd_queue.pop_back();
         }
-        cmd_queue.push_back(UP);
-        work_queue.push_back(cmd_queue);
-        cmd_queue.pop_back();
-        
-        cmd_queue.push_back(DOWN);
-        work_queue.push_back(cmd_queue);
-        cmd_queue.pop_back();
-          
-        cmd_queue.push_back(LEFT);
-        work_queue.push_back(cmd_queue);
-        cmd_queue.pop_back();
-          
-        cmd_queue.push_back(RIGHT);
-        work_queue.push_back(cmd_queue);
-        cmd_queue.pop_back();
+        if(cmd_queue.size()<4 || cmd_queue.back() != 'U')
+        {
+           cmd_queue+='D';
+           work_queue.push_back(cmd_queue);
+           cmd_queue.pop_back();
+        }
+        if(cmd_queue.size()<4 || cmd_queue.back() != 'R')
+        {
+           cmd_queue+='L';
+           work_queue.push_back(cmd_queue);
+           cmd_queue.pop_back();
+        }
+        if(cmd_queue.size()<4 || cmd_queue.back() != 'L')
+        {
+           cmd_queue+='R';
+           work_queue.push_back(cmd_queue);
+           cmd_queue.pop_back();
+        }
       }
     }
+    if(work_queue.size()>1)
     work_queue.pop_front();
   }
   return -1;
@@ -538,5 +454,91 @@ TEST (labyrinthNavigation, Test_18) {
        ".........................."}
      ,{0,24}
      ,{9,0}
+));
+};
+//-------------------------------------------------------------------------------
+TEST (labyrinthNavigation, Test_19) {
+    EXPECT_EQ ( 192, labyrinthNavigation (
+      {"**********************************************..",
+       "................................................",
+       "..**********************************************",
+       "................................................",
+       "**********************************************..",
+       "................................................",
+       "..**********************************************",
+       "................................................",
+       "**********************************************..",
+       "................................................",
+       "................................................",
+       "**********************************************..",
+       "................................................",
+       "..**********************************************",
+       "................................................",
+       "**********************************************..",
+       "................................................"}
+     ,{0,47}
+     ,{13,0}
+));
+};
+//-------------------------------------------------------------------------------
+TEST (labyrinthNavigation, Test_20_50_50) {
+    EXPECT_EQ ( 98, labyrinthNavigation (
+      {"**********************************************..",
+       "................................................",
+       "..**********************************************",
+       "................................................",
+       "**********************************************..",
+       "................................................",
+       "..**********************************************",
+       "................................................",
+       "**********************************************..",
+       "................................................",
+       "..**********************************************",
+       "................................................",
+       "**********************************************..",
+       "................................................",
+       "..**********************************************",
+       "................................................",
+       "**********************************************..",
+       "................................................",
+       "..**********************************************",
+       "................................................",
+       "**********************************************..",
+       "................................................",
+       "..**********************************************",
+       "................................................",
+       "**********************************************..",
+       "................................................",
+       "..**********************************************",
+       "................................................",
+       "**********************************************..",
+       "................................................",
+       "..**********************************************",
+       "................................................",
+       "**********************************************..",
+       "................................................",
+       "..**********************************************",
+       "................................................",
+       "**********************************************..",
+       "................................................",
+       "..**********************************************",
+       "................................................",
+       "**********************************************..",
+       "................................................",
+       "..**********************************************",
+       "................................................",
+       "**********************************************..",
+       "................................................",
+       "..**********************************************",
+       "................................................",
+       "**********************************************..",
+       "................................................",
+       "..**********************************************",
+       "................................................",
+       "**********************************************..",
+       "................................................",
+       "..**********************************************"}
+     ,{0,47}
+     ,{49,0}
 ));
 };
