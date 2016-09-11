@@ -5,7 +5,7 @@
 
 #include <cstdlib>
 #include <cstdint>
-#define _DEBUG 2
+#define _DEBUG 0
 
 // enum Direction : int8_t {UP,DOWN,LEFT,RIGHT, NEUTRAL};
 #define UP 'U'
@@ -17,16 +17,39 @@
 //-----------------------------------------------------------------------------
 struct Position 
 {
-  int _X;
-  int _Y;
-  bool operator==(const Position& rhs){
+  int _X = 0;
+  int _Y = 0;
+  bool operator==(const Position& rhs) const{
     return _X == rhs._X && _Y == rhs._Y;
+  }
+  bool operator!=(const Position& rhs){
+    return !(*this == rhs);
+  }
+  Position operator-(const Position& rhs) const{
+    Position ans = {_X-rhs._X, _Y-rhs._Y};
+    return ans;
   }
 };
 //-----------------------------------------------------------------------------
-
+// #if _DEBUG
+std::ostream& operator<<(std::ostream& os, const Position& pose){
+  os << "(" << pose._X << " , " << pose._Y<< ")";
+  return os;
+}
+// #endif
 //-----------------------------------------------------------------------------
-using Solution = std::string ;
+class Solution : public std::string {
+public:
+  Solution(std::string str):
+  std::string(str){
+    
+  }
+  Solution(char str):
+  std::string({str}){
+    
+  }
+  Position tile = {0,0};
+};
 
 //-----------------------------------------------------------------------------
 class Laybrinth 
@@ -43,7 +66,7 @@ public:
   inline Position Start() const { return _start;};
   inline Position Finish() const { return _finish;};
   //---------------------------------------------
-  bool simulate(Solution work_queue,
+  bool simulate(Solution& work_queue,
                   size_t& cycles)
   {
     cycles = -1;
@@ -54,6 +77,21 @@ public:
     auto itr = work_queue.begin();
 
 
+    if(work_queue.tile != Position())
+    {
+      switch (work_queue.back()){
+          case UP:    work_queue.tile._Y-=1;  break;
+          case DOWN:  work_queue.tile._Y+=1;  break;
+          case LEFT:  work_queue.tile._X-=1;  break;
+          case RIGHT: work_queue.tile._X+=1;  break;
+          default:          break;
+      }
+      if ( _labyrinth[work_queue.tile._Y][work_queue.tile._X] != '.' ){
+        cycles = 0;
+        return false;
+      }
+    }
+    
     while(!done) {
       
       for ( ; 
@@ -91,6 +129,11 @@ public:
       if( current._X == _start._X && current._Y == _start._Y){
         break;
       }
+      if(cycles == 0)
+      {
+        work_queue.tile = current;
+        // std::cout << current << " "  << _start << " " << work_queue.tile << "\n";
+      }
       itr = work_queue.begin();
     }
     return false;
@@ -106,7 +149,7 @@ int labyrinthNavigation(std::vector<std::string> map,
                         std::vector<int> dest) 
 {
   decltype(map)  padded_map(map.size()+2,
-                            std::string(map[1].size()+2,'#'));
+                            std::string(map[0].size()+2,'#'));
   for (auto i=0; i<map.size(); ++i)
     padded_map[i+1].replace(1,map[i].size(),map[i]);
   Position adj_start = {start[1]+1,start[0]+1};
@@ -126,10 +169,10 @@ int labyrinthNavigation(std::vector<std::string> map,
   #endif
     
   std::deque<Solution> work_queue;
-  work_queue.push_back({UP});
-  work_queue.push_back({DOWN});
-  work_queue.push_back({LEFT});
-  work_queue.push_back({RIGHT});
+  work_queue.push_back(Solution(UP));
+  work_queue.push_back(Solution(DOWN));
+  work_queue.push_back(Solution(LEFT));
+  work_queue.push_back(Solution(RIGHT));
   
   while (work_queue.size()){
     auto cmd_queue = work_queue.front();
