@@ -73,7 +73,17 @@ public:
         default:          break;
       }
     }
-
+  //---------------------------------------------
+  void unmove(const Direction& rhs)
+    { 
+      switch (rhs){
+        case UP:    _Y+=1;  break;
+        case DOWN:  _Y-=1;  break;
+        case LEFT:  _X+=1;  break;
+        case RIGHT: _X-=1;  break;
+        default:          break;
+      }
+    }
 private:
   size_t _X;
   size_t _Y;
@@ -94,8 +104,8 @@ public:
     ,_qsp(start)
   {}
   
-    Position getQuickStart(const Position start) const { 
-      return (_qsp.getX() != -1 )? _qsp : start; 
+    Position getQuickStart() const { 
+      return _qsp ; 
     }
     void     setQuickStart(const Position& pose) { _qsp = pose; }
 protected:
@@ -116,20 +126,17 @@ public:
   inline Position Start() const { return _start;};
   inline Position Finish() const { return _finish;};
   //---------------------------------------------
-  bool simulate(Solution& work_queue,
+  bool simulate(Solution work_queue,
                   size_t& cycles)
   {
     cycles = -1;
     bool done = false;
-    Position current = _start;
-    Position prev    = _start;
-    Direction prev_cmd = NEUTRAL;
-    
+    Position current = work_queue.getQuickStart();;
+    std::vector<Position> history{_start};
+
     auto itr = work_queue.begin();
-    // if ( work_queue.size() > 1){
-    //   itr += work_queue.size() - 2;
-    //   current = work_queue.getQuickStart(_start);
-    // }
+
+
     while(!done) {
       
       for ( ; 
@@ -141,18 +148,25 @@ public:
           return true;
         } else if ( _labyrinth[current.getY()][current.getX()] != '.' ) { 
           done = true; break;
-        } else if ( current == prev && itr != work_queue.end()-1) {
-          done = true; break;
+        } 
+        else if ( work_queue.size()>3&&find (history.begin(), history.end(), current) != history.end()
+                    &&  itr != work_queue.begin()
+                    &&  itr != work_queue.end()-1
+                )
+        {
+#if _DEBUG > 4
+          std::cout << work_queue.size() << "##";
+          for ( auto cmd : work_queue )
+            std::cout << cmd << ",";
+          std::cout << "\n";
+#endif
+          cycles = 0; return false;
         }
-        prev.move(prev_cmd);
-        prev_cmd = *itr;
+        history.push_back(current);
       }
-      prev.move(prev_cmd);
-      prev_cmd = NEUTRAL;
       ++cycles;
-      if(!cycles){
-        work_queue.setQuickStart(current);
-      }
+      history.clear();
+      history.push_back(current);
       if( current == _start){
         break;
       }
@@ -196,6 +210,7 @@ int labyrinthNavigation(std::vector<std::string> map,
   work_queue.push_back(Solution({LEFT}, laybrinth.Start()));
   work_queue.push_back(Solution({RIGHT},laybrinth.Start()));
   
+  size_t max_queue_size = 0;
   while (work_queue.size()){
     auto cmd_queue = work_queue.front();
     size_t cycles = 0;
@@ -214,7 +229,10 @@ int labyrinthNavigation(std::vector<std::string> map,
           std::cout << cmd << ",";
         std::cout << "\n";
 #endif        
-        // if (work_queue.front().size() > 11) break;
+        if(max_queue_size < work_queue.size())
+        {
+          max_queue_size = work_queue.size();
+        }
         cmd_queue.push_back(UP);
         work_queue.push_back(cmd_queue);
         cmd_queue.pop_back();
@@ -507,7 +525,7 @@ TEST (labyrinthNavigation, Test_17) {
 };
 //-------------------------------------------------------------------------------
 TEST (labyrinthNavigation, Test_18) {
-    EXPECT_EQ ( 32, labyrinthNavigation (
+    EXPECT_EQ ( 52, labyrinthNavigation (
       {"************************..",
        "..........................",
        "..************************",
