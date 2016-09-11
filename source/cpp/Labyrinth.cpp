@@ -13,8 +13,6 @@
 #define LEFT 'L'
 #define RIGHT 'R'
 //-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
 struct Position 
 {
   int _X = 0;
@@ -40,15 +38,10 @@ std::ostream& operator<<(std::ostream& os, const Position& pose){
 //-----------------------------------------------------------------------------
 class Solution : public std::string {
 public:
-  Solution(std::string str):
-  std::string(str){
-    
-  }
+  Solution(std::string str)
+    :std::string(str){}
   Solution(char str):
-  std::string({str}){
-    
-  }
-  Position tile = {0,0};
+  std::string({str}){}  
 };
 
 //-----------------------------------------------------------------------------
@@ -69,29 +62,13 @@ public:
   bool simulate(Solution& work_queue,
                   size_t& cycles)
   {
-    cycles = -1;
+    cycles = 0;
     bool done = false;
     Position current = _start;
     std::vector<Position> history{_start};
 
-    auto itr = work_queue.begin();
-
-
-    if(work_queue.tile != Position())
-    {
-      switch (work_queue.back()){
-          case UP:    work_queue.tile._Y-=1;  break;
-          case DOWN:  work_queue.tile._Y+=1;  break;
-          case LEFT:  work_queue.tile._X-=1;  break;
-          case RIGHT: work_queue.tile._X+=1;  break;
-          default:          break;
-      }
-      if ( _labyrinth[work_queue.tile._Y][work_queue.tile._X] != '.' ){
-        cycles = 0;
-        return false;
-      }
-    }
     
+    auto itr = work_queue.begin();
     while(!done) {
       
       for ( ; 
@@ -111,7 +88,7 @@ public:
         if(current._X == _finish._X && current._Y == _finish._Y){ 
           return true;
         } else if ( _labyrinth[current._Y][current._X] != '.' ) { 
-          done = true; break;
+          return false;
         } 
         else if ( work_queue.size()>3&&find (history.begin(), history.end(), current) != history.end()
                     &&  itr != work_queue.begin()
@@ -128,11 +105,6 @@ public:
       history.push_back(current);
       if( current._X == _start._X && current._Y == _start._Y){
         break;
-      }
-      if(cycles == 0)
-      {
-        work_queue.tile = current;
-        // std::cout << current << " "  << _start << " " << work_queue.tile << "\n";
       }
       itr = work_queue.begin();
     }
@@ -156,7 +128,7 @@ int labyrinthNavigation(std::vector<std::string> map,
   Position adj_dest  = {dest[1]+1,dest[0]+1};
   Laybrinth laybrinth(padded_map,adj_start, adj_dest); 
 
-  #if _DEBUG > 1
+  // #if _DEBUG > 1
     std::cout << "Start( "<< start[1]+1<< " , " << start[0]+1 <<" )\n";
     std::cout << "Finish( "<< dest[1]+1<< " , " <<  dest[0]+1 <<" )\n";
 
@@ -166,7 +138,7 @@ int labyrinthNavigation(std::vector<std::string> map,
     for(auto s:padded_map)
       std::cout << s << "\n";
     std::cout << "\n";
-  #endif
+  // #endif
     
   std::deque<Solution> work_queue;
   work_queue.push_back(Solution(UP));
@@ -178,33 +150,64 @@ int labyrinthNavigation(std::vector<std::string> map,
     auto cmd_queue = work_queue.front();
     size_t cycles = 0;
     if( laybrinth.simulate(cmd_queue,cycles )){
-
        return cmd_queue.size();
     } else {
       if (cycles ){
-        if(cmd_queue.size()<4 || cmd_queue.back() != 'D')
+        if(cmd_queue.size()<6 || cmd_queue.back() != 'D')
         {
            cmd_queue+="U";
            work_queue.push_back(cmd_queue);
            cmd_queue.pop_back();
+        } else  if(cmd_queue.back() == 'U'){
+          cmd_queue+="UUUU";
+          work_queue.push_back(cmd_queue);
+          cmd_queue.pop_back();
+          cmd_queue.pop_back();
+          cmd_queue.pop_back();
+          work_queue.push_back(cmd_queue);
+          cmd_queue.pop_back();
         }
-        if(cmd_queue.size()<4 || cmd_queue.back() != 'U')
+        if(cmd_queue.size()<6 || cmd_queue.back() != 'U')
         {
            cmd_queue+='D';
            work_queue.push_back(cmd_queue);
            cmd_queue.pop_back();
+        } else if(cmd_queue.back() == 'D'){
+          cmd_queue+="DDDD";
+          work_queue.push_back(cmd_queue);
+          cmd_queue.pop_back();
+          cmd_queue.pop_back();
+          cmd_queue.pop_back();
+          work_queue.push_back(cmd_queue);
+          cmd_queue.pop_back();
         }
-        if(cmd_queue.size()<4 || cmd_queue.back() != 'R')
+        if(cmd_queue.size()<6 || cmd_queue.back() != 'R')
         {
            cmd_queue+='L';
            work_queue.push_back(cmd_queue);
            cmd_queue.pop_back();
+        } else  if(cmd_queue.back() == 'L'){
+          cmd_queue+="LLLL";
+          work_queue.push_back(cmd_queue);
+          cmd_queue.pop_back();
+          cmd_queue.pop_back();
+          cmd_queue.pop_back();
+          work_queue.push_back(cmd_queue);
+          cmd_queue.pop_back();
         }
-        if(cmd_queue.size()<4 || cmd_queue.back() != 'L')
+        if(cmd_queue.size()<6 || cmd_queue.back() != 'L')
         {
            cmd_queue+='R';
            work_queue.push_back(cmd_queue);
            cmd_queue.pop_back();
+        } else  if (cmd_queue.back() == 'R')  {
+          cmd_queue+="RRRR";
+          work_queue.push_back(cmd_queue);
+          cmd_queue.pop_back();
+          cmd_queue.pop_back();
+          cmd_queue.pop_back();
+          work_queue.push_back(cmd_queue);
+          cmd_queue.pop_back();
         }
       }
     }
@@ -553,6 +556,7 @@ TEST (labyrinthNavigation, Test_20_50_50) {
        "**********************************************..",
        "................................................",
        "..**********************************************",
+       "................................................",
        "................................................",
        "**********************************************..",
        "................................................",
