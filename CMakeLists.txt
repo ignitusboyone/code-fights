@@ -6,7 +6,7 @@ option(CF_BUILD_PRETTY FALSE)
 
 if( NOT CMAKE_BUILD_TYPE )
   set(BUILD_OPTIONS_STRINGS
-    "Debug"
+    "g"
     "Release"
   )
   set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Release;Debug" FORCE)
@@ -28,6 +28,8 @@ endif()
 find_package(GTest)
 
 set(CXX-Challanges 
+  Labyrinth
+  caesarian
   conwaysVariationsOfLife
   uShouldDate
   glasses
