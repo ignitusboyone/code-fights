@@ -4,11 +4,13 @@
 #include <iostream>
 
 #include <cstdlib>
-#define _DEBUG 2
+#define _DEBUG 0
 
 enum Direction : int8_t {UP,DOWN,LEFT,RIGHT, NEUTRAL};
+//-----------------------------------------------------------------------------
 #ifdef _DEBUG
-std::ostream& operator<< (std::ostream& ostr, Direction obj){
+std::ostream& operator<< (std::ostream& ostr, Direction obj)
+{
   switch(obj){
     case UP:    ostr<<'U';  break;
     case DOWN:  ostr<<'D';  break;
@@ -19,7 +21,9 @@ std::ostream& operator<< (std::ostream& ostr, Direction obj){
   return ostr;
 }
 #endif
-class Position {
+//-----------------------------------------------------------------------------
+class Position 
+{
 public:
   Position(size_t x=0, size_t y=0)
     :_X(x)
@@ -27,8 +31,8 @@ public:
   {}
   inline void setX(size_t x){ _X = x;}
   inline void setY(size_t y){ _Y = y;}
-  inline size_t getX(){ return _X;}
-  inline size_t getY(){ return _Y;}
+  inline size_t getX() const { return _X;}
+  inline size_t getY() const { return _Y;}
   //---------------------------------------------
   bool operator==(const Position& rhs)
     { return _X == rhs._X && _Y == rhs._Y;}
@@ -75,19 +79,31 @@ private:
   size_t _Y;
 };
 //-----------------------------------------------------------------------------
-class Solution: public std::vector<Direction> {
+#ifdef _DEBUG
+std::ostream& operator<< (std::ostream& ostr, Position obj){
+  ostr << "(" << obj.getX() <<" , "<< obj.getY() <<")";
+  return ostr;
+}
+#endif
+//-----------------------------------------------------------------------------
+class Solution: public std::vector<Direction> 
+{
 public:
-  Solution(std::vector<Direction> cmds)
+  Solution(std::vector<Direction> cmds, Position start)
     :std::vector<Direction>(cmds)
+    ,_qsp(start)
   {}
   
-    Position getQuickStart() const { return _QuickStartPosition; }
-    void     setQuickStart(const Position& pose) { _QuickStartPosition = pose; }
+    Position getQuickStart(const Position start) const { 
+      return (_qsp.getX() != -1 )? _qsp : start; 
+    }
+    void     setQuickStart(const Position& pose) { _qsp = pose; }
 protected:
-  Position _QuickStartPosition;
+  Position _qsp;
 };
 //-----------------------------------------------------------------------------
-class Laybrinth {
+class Laybrinth 
+{
 public:
   Laybrinth(std::vector<std::string> map, 
              Position initial, 
@@ -108,12 +124,18 @@ public:
     Position current = _start;
     Position prev    = _start;
     Direction prev_cmd = NEUTRAL;
+    
+    auto itr = work_queue.begin();
+    // if ( work_queue.size() > 1){
+    //   itr += work_queue.size() - 2;
+    //   current = work_queue.getQuickStart(_start);
+    // }
     while(!done) {
-      auto itr = work_queue.begin();
-      for ( itr + work_queue.size()-1; 
+      
+      for ( ; 
             itr != work_queue.end(); 
             ++itr)
-     {
+      {
         current.move(*itr);
         if(current == _finish){ 
           return true;
@@ -128,9 +150,13 @@ public:
       prev.move(prev_cmd);
       prev_cmd = NEUTRAL;
       ++cycles;
+      if(!cycles){
+        work_queue.setQuickStart(current);
+      }
       if( current == _start){
         break;
       }
+      itr = work_queue.begin();
     }
     work_queue.setQuickStart(current);
     return false;
@@ -143,7 +169,8 @@ private:
 //-----------------------------------------------------------------------------
 int labyrinthNavigation(std::vector<std::string> map, 
                         std::vector<int> start, 
-                        std::vector<int> dest) {
+                        std::vector<int> dest) 
+{
   decltype(map)  padded_map(map.size()+2,
                             std::string(map[1].size()+2,'#'));
   for (auto i=0; i<map.size(); ++i)
@@ -164,10 +191,10 @@ int labyrinthNavigation(std::vector<std::string> map,
 #endif
     
   std::deque<Solution> work_queue;
-  work_queue.push_back(Solution({UP}));
-  work_queue.push_back(Solution({DOWN}));
-  work_queue.push_back(Solution({LEFT}));
-  work_queue.push_back(Solution({RIGHT}));
+  work_queue.push_back(Solution({UP},   laybrinth.Start()));
+  work_queue.push_back(Solution({DOWN}, laybrinth.Start()));
+  work_queue.push_back(Solution({LEFT}, laybrinth.Start()));
+  work_queue.push_back(Solution({RIGHT},laybrinth.Start()));
   
   while (work_queue.size()){
     auto cmd_queue = work_queue.front();
