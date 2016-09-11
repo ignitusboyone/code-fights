@@ -5,8 +5,10 @@
 
 #include <cstdlib>
 #include <cstdint>
-#define _DEBUG 0
-
+#ifdef _DEBUG
+  #undef _DEBUG
+  #define _DEBUG 0
+#endif
 // enum Direction : int8_t {UP,DOWN,LEFT,RIGHT, NEUTRAL};
 #define UP 'U'
 #define DOWN 'D'
@@ -77,7 +79,7 @@ public:
     std::vector<Position> history{_start};
     
     Position& tile = work_queue.tile;
-    if(tile != Position())
+    if(tile != Position() )
     {  
       switch (work_queue.back()){
           case UP:    tile._Y-=1;  break;
@@ -210,68 +212,58 @@ int labyrinthNavigation(std::vector<std::string> map,
     auto cmd_queue = work_queue.front();
     size_t cycles = 0;
     if( laybrinth.simulate(cmd_queue,cycles )){
+#ifdef _DEBUG 
+      for( auto c: cmd_queue)
+        std::cout << c;
+      std::cout << "\n";
+#endif
        return cmd_queue.size();
     } else {
       if (cycles ){
-        if(cmd_queue.size()<6 || cmd_queue.back() != 'D')
+        if( cmd_queue.size()<6 )
         {
            cmd_queue+="U";
            work_queue.push_back(cmd_queue);
            cmd_queue.pop_back();
-        } // else  if(cmd_queue.back() == 'U'){
-//           cmd_queue+="UUUU";
-//           work_queue.push_back(cmd_queue);
-//           cmd_queue.pop_back();
-//           cmd_queue.pop_back();
-//           cmd_queue.pop_back();
-//           work_queue.push_back(cmd_queue);
-//           cmd_queue.pop_back();
-//         }
-        if(cmd_queue.size()<6 || cmd_queue.back() != 'U')
-        {
+           
            cmd_queue+='D';
            work_queue.push_back(cmd_queue);
            cmd_queue.pop_back();
-        } // else if(cmd_queue.back() == 'D'){
-//           cmd_queue+="DDDD";
-//           work_queue.push_back(cmd_queue);
-//           cmd_queue.pop_back();
-//           cmd_queue.pop_back();
-//           cmd_queue.pop_back();
-//           work_queue.push_back(cmd_queue);
-//           cmd_queue.pop_back();
-//         }
-        if(cmd_queue.size()<6 || cmd_queue.back() != 'R')
-        {
+           
            cmd_queue+='L';
            work_queue.push_back(cmd_queue);
            cmd_queue.pop_back();
-        } // else  if(cmd_queue.back() == 'L'){
-//           cmd_queue+="LLLL";
-//           work_queue.push_back(cmd_queue);
-//           cmd_queue.pop_back();
-//           cmd_queue.pop_back();
-//           cmd_queue.pop_back();
-//           work_queue.push_back(cmd_queue);
-//           cmd_queue.pop_back();
-//         }
-        if(cmd_queue.size()<6 || cmd_queue.back() != 'L')
-        {
+           
            cmd_queue+='R';
            work_queue.push_back(cmd_queue);
            cmd_queue.pop_back();
-        } // else  if (cmd_queue.back() == 'R')  {
-//           cmd_queue+="RRRR";
-//           work_queue.push_back(cmd_queue);
-//           cmd_queue.pop_back();
-//           cmd_queue.pop_back();
-//           cmd_queue.pop_back();
-//           work_queue.push_back(cmd_queue);
-//           cmd_queue.pop_back();
-//         }
+        } else  {
+          if (cmd_queue.back() != 'D'){
+            cmd_queue+="U";
+            work_queue.push_back(cmd_queue);
+            cmd_queue.pop_back();
+          }
+          
+          if (cmd_queue.back() != 'U'){
+            cmd_queue+="D";
+            work_queue.push_back(cmd_queue);
+            cmd_queue.pop_back();
+          }
+          
+          if (cmd_queue.back() != 'R'){
+            cmd_queue+="L";
+            work_queue.push_back(cmd_queue);
+            cmd_queue.pop_back();
+          }
+          
+          if (cmd_queue.back() != 'L'){
+            cmd_queue+="R";
+            work_queue.push_back(cmd_queue);
+            cmd_queue.pop_back();
+          }
+        }
       }
     }
-    if(work_queue.size()>1)
     work_queue.pop_front();
   }
   return -1;
