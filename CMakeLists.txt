@@ -27,7 +27,8 @@ endif()
 
 find_package(GTest)
 
-set(CXX-Challanges 
+set(Challanges 
+  A_Star
   Labyrinth
   caesarian
   conwaysVariationsOfLife
@@ -37,24 +38,12 @@ set(CXX-Challanges
   transformLetters
 )
 
-set(GO-Challanges 
-  uShouldDate
-  glasses
-  square-diff
-  transformLetters
-)
-
-set(Rust-Challanges 
-  uShouldDate
-  glasses
-  square-diff
-  transformLetters
-)
 include_directories( ${GTEST_INCLUDE_DIR} )
 
-foreach (proj IN LISTS CXX-Challanges)
-    add_executable(${proj} source/cpp/${proj}.cpp)
-    set_target_properties(${proj}
+foreach (proj IN LISTS Challanges)
+  if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/source/cpp/${proj}.cpp)
+    add_executable(cpp_${proj} source/cpp/${proj}.cpp)
+    set_target_properties(cpp_${proj}
     PROPERTIES
     LANGUAGE CXX
     LINKER_LANGUAGE CXX
@@ -63,10 +52,9 @@ foreach (proj IN LISTS CXX-Challanges)
     OUTPUT_NAME ${proj}
     CXX_STANDARD 14
     )
-    target_link_libraries(${proj} ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES})
-endforeach()
-
-foreach (proj IN LISTS GO-Challanges)
+    target_link_libraries(cpp_${proj} ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES})
+  endif()
+  if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/source/go/${proj}.go)
     add_executable(go_${proj} source/go/${proj}.go)
     set_target_properties(go_${proj}
      PROPERTIES
@@ -76,9 +64,8 @@ foreach (proj IN LISTS GO-Challanges)
      RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/go"
      OUTPUT_NAME ${proj}
      )
-endforeach()
-
-foreach (proj IN LISTS Rust-Challanges)
+  endif()
+  if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/source/rust/${proj}.rs)
     add_executable(rust_${proj} source/rust/${proj}.rs)
     set_target_properties(rust_${proj}
      PROPERTIES
@@ -88,5 +75,5 @@ foreach (proj IN LISTS Rust-Challanges)
      RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/rust"
      OUTPUT_NAME ${proj}
      )
+  endif()
 endforeach()
-
