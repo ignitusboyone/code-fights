@@ -20,7 +20,7 @@ class Position
   using Coordinate = std::pair<int, int>;
 public:
   enum Style {COORDS,ASCII};
-  enum Tile:char { WALL='|', OBSTACLE='#', PATH='#' };
+  enum Tile:char { WALL='|', OBSTACLE='#', PATH='#', VERT='-', HORIZ='|' };
   Position()
     :_from(0,0)
     ,_coord(0,0)
@@ -211,8 +211,10 @@ public:
   inline const Position& Finish() const { return _finish;}
   inline const Position::Style OutputStyle() const { return _style;}
   //-----------------------------------------------------------
-  inline  void Start (int x,int y)   { _start = {x,y}; }
+  inline  void Start (int x,int y)  { _start = {x,y}; }
   inline  void Finish(int x,int y)  { _finish = {x,y};}
+  inline  void Start (Position p)   { _start = p; }
+  inline  void Finish(Position p)   { _finish = p;}
   inline  void OutputStyle(Position::Style s) {  _style = s;}
   //-----------------------------------------------------------
   Position& operator()(int x, int y){ return _laybrinth[x][y];}
@@ -228,8 +230,10 @@ public:
       std::vector<Position> path = {goal};
       Position current = goal;
       while (current != _start)
+      {
           current = operator()(current.From());
           path.push_back(current);
+        }
       return path;
   }
   bool isValid(Position node) const {
@@ -271,8 +275,14 @@ std::ostream& operator<<(std::ostream& os, Laybrinth layb)
       os << std::setw(4);
       os << i << ": ";
       for ( int j = 0; j < layb.Width(); ++j)
-      {
-         os << std::setw(2) << layb(j,i).Value(); 
+      {   
+        os << std::setw(2);
+        if( layb(j,i) != layb.Start() && layb(j,i) != layb.Finish())
+          os << layb(j,i).Value(); 
+        else if(layb(j,i) == layb.Start())
+          os << 'S'; 
+        else
+          os << 'G'; 
       } os << "\n";
     }
   return os;
@@ -299,7 +309,6 @@ public:
   //-----------------------------------------------------------  
   std::vector<Position> A_Star() 
   {
-    std::vector<Position> path;
     std::list<Position> closedSet;
     std::list<Position> openedSet = {_start};
 
@@ -327,7 +336,7 @@ public:
         _laybrinth(neighbor).FScore() = neighbor.GScore() + _laybrinth(neighbor).heuristicCostEstimate(_goal);
         }
     }
-    return path;
+    return {};
   }
   //-----------------------------------------------------------
   std::vector<Position> A_Star( Position s, Position g)  
@@ -346,15 +355,16 @@ private:
 int main(int argc, char* argv[]){
   Laybrinth maze(10,10);
   maze.OutputStyle(Position::ASCII);
-  
-  Position  start(0,0);
-  Position finish(9,9);
-  std::cout << "Search for S" << start << " F" << finish <<"\n";
+  Position s(0,0);
+  Position f(9,9);
+  maze.Start(s);
+  maze.Finish(f);
+  std::cout << "Search for S" << s << " F" << f <<"\n";
   std::cout << "In:\n";
   std::cout << maze;
   
-  Agent bob = Agent(maze, start,finish);
-  auto path = bob.A_Star(start,finish);
+  Agent bob = Agent(maze,s,f);
+  auto path = bob.A_Star(s,f);
   
   std::cout << "Found:\n";
   for ( auto n : path)
