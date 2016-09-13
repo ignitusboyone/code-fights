@@ -10,6 +10,7 @@
 #include<cmath>
 
 #include<algorithm>
+#include<deque>
 #include<vector>
 #include<list>
 #include<limits>
@@ -20,7 +21,7 @@ class Position
   using Coordinate = std::pair<int, int>;
 public:
   enum Style {COORDS,ASCII};
-  enum Tile:char { WALL='|', OBSTACLE='#', PATH='#', VERT='-', HORIZ='|' };
+  enum Tile:char { WALL='#', OBSTACLE='*', PATH='.', VERT='-', HORIZ='|' };
   Position()
     :_from(0,0)
     ,_coord(0,0)
@@ -36,6 +37,7 @@ public:
     ,_h_score(obj._h_score)
     ,_from (std::move(obj._from))
     ,_coord(std::move(obj._coord))
+    ,_value(std::move(obj._value))
   {}
   Position(const Position& obj)
     :_g_score(obj._g_score)
@@ -43,6 +45,7 @@ public:
     ,_h_score(obj._h_score)
     ,_from (obj._from)
     ,_coord(obj._coord)
+    ,_value(std::move(obj._value))
   {}
   //-----------------------------------------------------------
   inline int& X() { return _coord.first;}
@@ -53,9 +56,9 @@ public:
   inline const int& Y() const { return _coord.second;}
   inline const char& Value() const { return _value;}
   //-----------------------------------------------------------
-  inline void X(int x) { _coord.first=x;}
-  inline void Y(int y) { _coord.second=y;}
-  inline void Value(char c) { _value=c;}
+  inline Position& X(int x) { _coord.first=x; return *this;}
+  inline Position& Y(int y) { _coord.second=y; return *this;}
+  inline Position& Value(char c) { _value=c; return *this;}
   //-----------------------------------------------------------
   bool operator==(const Position& rhs) const{
     return this->X() == rhs.X() && Y() == rhs.Y();
@@ -93,6 +96,7 @@ public:
       _h_score = (obj._h_score);
       _from  = (obj._from);
       _coord = (obj._coord);
+      _value = (obj._value);
     }
     return *this;
   }
@@ -106,6 +110,7 @@ public:
       _h_score = (obj._h_score);
       _from  = (std::move(obj._from));
       _coord = (std::move(obj._coord));
+      _value = (std::move(obj._value));
     }
   return *this;
   }
@@ -187,18 +192,40 @@ using Coordinate = std::pair<int, int>;
 using NodeMap = std::vector<std::vector<Position>>;
 using NodeRow = std::vector<Position>;
 public:
+  Laybrinth() = default;
+  //-----------------------------------------------------------
   Laybrinth(size_t w, size_t l)
     :_laybrinth(w,std::vector<Position>(l))
   { 
     for( size_t i = 0; i < _laybrinth.size(); ++i)
     {
-      for( size_t j = 0; j < _laybrinth.size(); ++j)
+      for( size_t j = 0; j < _laybrinth[0].size(); ++j)
       {
         _laybrinth[i][j] = Position(i,j);
       }
     } 
   }
-  
+  //-----------------------------------------------------------
+  Laybrinth(std::vector<std::string> map)
+    :_laybrinth(map[0].size(),std::vector<Position>(map.size()))
+  {
+    for( size_t i = 0; i < _laybrinth.size(); ++i)
+    {
+      for( size_t j = 0; j < _laybrinth[0].size(); ++j)
+      {
+        _laybrinth[i][j] = Position(i,j).Value(map[j][i]);
+      }
+    } 
+  }
+  //-----------------------------------------------------------
+  Laybrinth(const Laybrinth& obj)
+    :_laybrinth(obj._laybrinth)
+    ,_start(obj._start)
+    ,_finish(obj._finish)
+    ,_style(obj._style)
+  {}
+  Laybrinth(Laybrinth&& obj)
+    { *this = std::move(obj);}
   //-----------------------------------------------------------
   inline int Width() const  { return _laybrinth.size();}
   inline int Height() const { return _laybrinth[0].size();}
@@ -211,11 +238,11 @@ public:
   inline const Position& Finish() const { return _finish;}
   inline const Position::Style OutputStyle() const { return _style;}
   //-----------------------------------------------------------
-  inline  void Start (int x,int y)  { _start = {x,y}; }
-  inline  void Finish(int x,int y)  { _finish = {x,y};}
-  inline  void Start (Position p)   { _start = p; }
-  inline  void Finish(Position p)   { _finish = p;}
-  inline  void OutputStyle(Position::Style s) {  _style = s;}
+  inline  Laybrinth& Start (int x,int y)  { _start = {x,y}; return *this;}
+  inline  Laybrinth& Finish(int x,int y)  { _finish = {x,y};return *this;}
+  inline  Laybrinth& Start (Position p)   { _start = p;     return *this;}
+  inline  Laybrinth& Finish(Position p)   { _finish = p;    return *this;}
+  inline  Laybrinth& OutputStyle(Position::Style s) {  _style = s;return *this;}
   //-----------------------------------------------------------
   Position& operator()(int x, int y){ return _laybrinth[x][y];}
   Position& operator()(const Coordinate p){ return _laybrinth[p.first][p.second];}
@@ -225,25 +252,72 @@ public:
   const Position& operator() (const Coordinate p)  const { return _laybrinth[p.first][p.second];}
   const Position& operator() (const Position& pos) const { return _laybrinth[pos.X()][pos.Y()];}
   //-----------------------------------------------------------
-  std::vector<Position> reconstructPath(const Position& goal) const
+  Laybrinth& operator=(const Laybrinth& obj)
   {
-      std::vector<Position> path = {goal};
+    if( this != &obj)
+    {
+      _laybrinth = (obj._laybrinth);
+      _start = (obj._start);
+      _finish = (obj._finish);
+      _style  = (obj._style);
+    }
+    return *this;
+  }
+  Laybrinth& operator=(Laybrinth&& obj)
+  {
+    if( this != &obj)
+    {
+      _laybrinth = std::move(obj._laybrinth);
+      _start = (obj._start);
+      _finish = (obj._finish);
+      _style  = (obj._style);
+    }
+    return *this;
+  }
+  //-----------------------------------------------------------
+  std::deque<Position> reconstructPath(const Position& goal) const
+  {
+      std::deque<Position> path = {};
       Position current = goal;
       while (current != _start)
       {
           current = operator()(current.From());
-          path.push_back(current);
+          path.push_front(current);
         }
       return path;
   }
+  //-----------------------------------------------------------
+  std::string reconstructPathAscii(const Position& goal) const
+  {
+      std::string path = "";
+      Position current = goal;
+      Position prev;
+      while (current != _start)
+      {
+          prev = current;
+          current = operator()(current.From());
+          if( prev.X() - current.X() == 1)
+            path+='R';
+          else if( prev.X() - current.X() == -1)
+            path+='L';
+          else if( prev.Y() - current.Y() ==  1)
+            path+='D';
+          else if( prev.Y() - current.Y() == -1)
+            path+='U';
+        }
+      std::reverse(path.begin(),path.end());
+      return path;
+  }
+  //-----------------------------------------------------------
   bool isValid(Position node) const {
     bool ans = 0 <= node.X() && node.X() < _laybrinth.size();
     ans&= 0 <= node.Y() && node.Y() < _laybrinth[0].size();
-    ans&= node.Value() == Position::Tile::PATH;
-    return ans;
+    
+    return (ans)? _laybrinth[node.X()][node.Y()].Value() == Position::Tile::PATH
+                : false;
   }
 private:
-   NodeMap _laybrinth;
+   NodeMap _laybrinth = {};
    Position _start  = {0,0};
    Position _finish = {0,0};
    
@@ -266,7 +340,7 @@ std::ostream& operator<<(std::ostream& os, Laybrinth layb)
     os << "     ";
     for ( int j = 0; j < layb.Width(); ++j)
     {
-      os << std::setw(2);
+      os << std::setw(2) << std::left;
       os << j;
     }
     os << "\n";
@@ -307,7 +381,34 @@ public:
     ,_goal(g)
   {}
   //-----------------------------------------------------------  
-  std::vector<Position> A_Star() 
+  Agent(const Agent& obj)
+    :_laybrinth(obj._laybrinth)
+    ,_start(obj._start)
+    ,_goal(obj._goal)
+  {}
+  Agent( Agent&& obj)
+    { *this = std::move(obj); }
+  //-----------------------------------------------------------  
+  Agent& operator=(const Agent& obj){
+    if(this != &obj)
+    {
+      _laybrinth=obj._laybrinth;
+      _start    =obj._start;
+      _goal     =obj._goal;
+    }
+    return *this;
+  }
+  Agent& operator=( Agent&& obj){
+    if(this != &obj)
+    {
+      _laybrinth=std::move(obj._laybrinth);
+      _start    =std::move(obj._start);
+      _goal     =std::move(obj._goal);
+    }
+    return *this;
+  }
+  //-----------------------------------------------------------  
+  std::deque<Position> A_Star() 
   {
     std::list<Position> closedSet;
     std::list<Position> openedSet = {_start};
@@ -320,7 +421,38 @@ public:
           return _laybrinth.reconstructPath(_goal);
       openedSet.remove(current);
       closedSet.push_back(current);
-      for( auto n : {Up,Down,Left,Right} ){
+      for( auto n : {Down,Left,Right,Up} ){
+        Position neighbor = current+n;
+        if(!_laybrinth.isValid(neighbor))
+          continue;
+        if(std::find(std::begin(closedSet),std::end(closedSet),neighbor) != std::end(closedSet))
+          continue;
+        int tentative_gScore = _laybrinth(current).GScore() + current.absDist(neighbor);
+        if(std::find(std::begin(openedSet),std::end(openedSet),neighbor) == std::end(openedSet))
+          openedSet.push_back(neighbor);
+        else if ( tentative_gScore >= _laybrinth(current).GScore())
+            continue;
+        _laybrinth(neighbor).From()   = current.Coord();
+        _laybrinth(neighbor).GScore() = tentative_gScore;
+        _laybrinth(neighbor).FScore() = neighbor.GScore() + _laybrinth(neighbor).heuristicCostEstimate(_goal);
+        }
+    }
+    return {};
+  }
+  std::string A_StarAscii() 
+  {
+    std::list<Position> closedSet;
+    std::list<Position> openedSet = {_start};
+
+    
+    _laybrinth(_start).heuristicCostEstimate(_goal);
+    while(openedSet.size()){
+      Position current = *std::min_element(std::begin(openedSet), std::end(openedSet));;
+      if (current == _goal)
+          return _laybrinth.reconstructPathAscii(_goal);
+      openedSet.remove(current);
+      closedSet.push_back(current);
+      for( auto n : {Down,Left,Right,Up} ){
         Position neighbor = current+n;
         if(!_laybrinth.isValid(neighbor))
           continue;
@@ -339,13 +471,21 @@ public:
     return {};
   }
   //-----------------------------------------------------------
-  std::vector<Position> A_Star( Position s, Position g)  
+  std::deque<Position> A_Star( Position s, Position g)  
   {
     _start = s;
     _goal = g;
     return A_Star();
+  } 
+  std::string A_StarAscii( Position s, Position g)  
+  {
+    _start = s;
+    _goal = g;
+    return A_StarAscii();
   }      
-
+  //-----------------------------------------------------------
+  std::deque<Position> reconstructPath(){ return _laybrinth.reconstructPath(_goal); }
+  std::string reconstructPathAscii(){ return _laybrinth.reconstructPathAscii(_goal); }
 private:
   Laybrinth _laybrinth;
   Position  _start;
@@ -353,21 +493,131 @@ private:
 };
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[]){
-  Laybrinth maze(10,10);
+  
+  
+  
+  
+  
+  Laybrinth maze(
+      {"**********************************************..",
+       "................................................",
+       "..**********************************************",
+       "................................................",
+       "**********************************************..",
+       "................................................",
+       "..**********************************************",
+       "................................................",
+       "**********************************************..",
+       "................................................",
+       "..**********************************************",
+       "................................................",
+       "**********************************************..",
+       "................................................",
+       "..**********************************************",
+       "................................................",
+       "**********************************************..",
+       "................................................",
+       "..**********************************************",
+       "................................................",
+       "**********************************************..",
+       "................................................",
+       "..**********************************************",
+       "................................................",
+       "**********************************************..",
+       "................................................",
+       "..**********************************************",
+       "................................................",
+       "................................................",
+       "**********************************************..",
+       "................................................",
+       "..**********************************************",
+       "................................................",
+       "**********************************************..",
+       "................................................",
+       "..**********************************************",
+       "................................................",
+       "**********************************************..",
+       "................................................",
+       "..**********************************************",
+       "................................................",
+       "**********************************************..",
+       "................................................",
+       "..**********************************************",
+       "................................................",
+       "**********************************************..",
+       "................................................",
+       "..**********************************************",
+       "................................................",
+       "**********************************************..",
+       "................................................",
+       "..**********************************************",
+       "................................................",
+       "**********************************************..",
+       "................................................",
+       "..**********************************************"});
   maze.OutputStyle(Position::ASCII);
-  Position s(0,0);
-  Position f(9,9);
-  maze.Start(s);
-  maze.Finish(f);
-  std::cout << "Search for S" << s << " F" << f <<"\n";
+  maze.Start(47,0);
+  maze.Finish(0,55);;
+  std::cout << "Search for S" << maze.Start() << " F" << maze.Finish() <<"\n";
   std::cout << "In:\n";
-  std::cout << maze;
+
   
-  Agent bob = Agent(maze,s,f);
-  auto path = bob.A_Star(s,f);
-  
+  Agent bob = Agent(maze,{47,0},{0,55});
+  auto path = bob.A_StarAscii({47,0},{0,55});
   std::cout << "Found:\n";
-  for ( auto n : path)
-    std::cout << n << ", ";
-  std::cout << "\b\b.\n";
+  for ( auto n : bob.reconstructPath())
+    maze(n).Value('^');
+  std::cout << maze;
+  std::cout << path << "\n";
+  
+  //---------------------
+  maze = Laybrinth(
+  {"...............",
+   ".*************.",
+   ".*...........*.",
+   ".*...........*.",
+   ".*...........*.",
+   ".*...........*.",
+   ".*...........*.",
+   ".*...........*.",
+   ".*************.",
+   "..............."});
+   maze.Start(2,2);
+   maze.Finish(11,6);
+ 
+   bob = Agent(maze,maze.Start(),maze.Finish());
+   path = bob.A_StarAscii({2,2},{11,6});
+  
+   std::cout << "Found:\n";
+   for ( auto n : bob.reconstructPath())
+     maze(n).Value('^');
+   std::cout << maze;
+   std::cout << path << "\n";
+   
+   //---------------------
+   maze = Laybrinth(
+     {"...........*...",
+      ".*.*.*.*.*.*...",
+      ".*.*.*.*.*.*...",
+      ".*.*.*.*.*.*...",
+      ".***.*.*.*.*...",
+      ".*.*.*.*.*.*...",
+      ".*.*.*.*.*.*...",
+      "..............."}
+   );
+   
+    maze.Start(0,7);
+    maze.Finish(14,6);
+ 
+    bob = Agent(maze,maze.Start(),maze.Finish());
+    path =  bob.A_StarAscii({0,7},{14,6});
+
+    std::cout << "Found:\n";
+    for ( auto n : bob.reconstructPath())
+    {  
+      maze(n).Value('^');
+      std::cout << n;
+    }std::cout << "\n";
+    std::cout << path << "\n";
+    std::cout << maze;
 }
