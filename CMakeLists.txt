@@ -28,6 +28,7 @@ endif()
 find_package(GTest)
 
 set(Challanges 
+  SumOfDigits2
   A_Star
   Labyrinth
   caesarian
