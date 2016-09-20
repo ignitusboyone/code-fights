@@ -1,3 +1,10 @@
+//Author ignitus
+//Date   2016-09-19
+//File   transformLetters.go
+//Given a String incrament each letter by 1+ char occurances * offset from zero.
+//For Instance A has a value of 0 and Z has an offset of 25
+//So AAA = BBB because A+1+3*0 = A+1 = B
+//   ZZZ = WWW because Z+1+3*25 = Z+1 +75 = Z+1+23 = Z+24 =
 package main
 
 import (
