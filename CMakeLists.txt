@@ -35,7 +35,6 @@ set(Challanges
   conwaysVariationsOfLife
   uShouldDate
   glasses
-  square-diff
   transformLetters
 )
 
